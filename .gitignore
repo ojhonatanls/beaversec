@@ -1,3 +1,13 @@
-📦 Adiciona .gitignore para ignorar arquivos de cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/📦 Adiciona .gitignore para ignorar arquivos de cache
 __pycache__/
 *.pyc
