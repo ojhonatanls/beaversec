@@ -152,5 +152,3 @@ Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes
 Desenvolvido no 1º semestre de TSI (Tecnologia em Sistemas para Internet) na UTFPR - Toledo.
 
 🦫 BeaverSec - Binary Enumeration & Advanced Vulnerability Exploitation Recon
-
-"Conhecimento compartilhado é conhecimento multiplicado."
