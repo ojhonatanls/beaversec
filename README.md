@@ -211,11 +211,13 @@ Contribuições são bem-vindas! Siga os passos:
 4. **Push** para a branch: `git push origin feature/nova-funcionalidade`
 5. Abra um **Pull Request**
 
+Reporte bugs ou sugira melhorias nas Issues.
+
 ---
 
 ## 📄 Licença
 
-Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para detalhes.
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
 
@@ -223,10 +225,13 @@ Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](L
 
 **Jhonatan Lucas Santos** - [GitHub](https://github.com/ojhonatanls)
 
-Projeto desenvolvido no 1º semestre de Tecnologia em Sistemas para Internet (TSI) na UTFPR.
+Desenvolvido no 1º semestre de TSI (Tecnologia em Sistemas para Internet) na UTFPR - Toledo.
 
 ---
 
 ## ⭐ Agradecimentos
 
 Se este projeto foi útil para você, considere dar uma ⭐ no GitHub!
+
+🦫 BeaverSec - Binary Enumeration & Advanced Vulnerability Exploitation Recon
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
