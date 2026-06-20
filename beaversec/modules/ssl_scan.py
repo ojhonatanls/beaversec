@@ -1,47 +1,58 @@
-import socket
-import ssl
-import datetime
-from utils.config_loader import get_setting
+"""Módulo de análise SSL/TLS."""
 
-def run(target, **kwargs):
-    """
-    Obtém informações do certificado SSL/TLS.
-    Exemplo: python main.py ssl_scan google.com
-    """
+import ssl
+import socket
+import datetime
+from typing import Dict, Any
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from beaversec.utils.security import validate_target
+
+def run(target: str, **kwargs) -> Dict[str, Any]:
+    """Analisa certificado SSL/TLS do alvo."""
+    target_type = validate_target(target)
+    if target_type == 'cidr':
+        raise ValueError("SSL scan requer um IP ou domínio, não um CIDR")
+    
     port = kwargs.get('port', 443)
-    if ':' in target:
-        target, port = target.split(':')
-        port = int(port)
-        
+    timeout = kwargs.get('timeout', 5)
+    
     try:
         context = ssl.create_default_context()
-        with socket.create_connection((target, port), timeout=10.0) as sock:
+        with socket.create_connection((target, port), timeout=timeout) as sock:
             with context.wrap_socket(sock, server_hostname=target) as ssock:
-                cert = ssock.getpeercert()
+                cert_der = ssock.getpeercert(binary_form=True)
+                cert = x509.load_der_x509_certificate(cert_der, default_backend())
                 
-        print(f"\n[+] SSL/TLS Info for {target}:{port}")
-        print(f"  Subject: {dict(cert['subject'][0])}")
-        print(f"  Issuer: {dict(cert['issuer'][0])}")
-        print(f"  Version: {cert.get('version', 'N/A')}")
-        
-        not_before = datetime.datetime.strptime(cert['notBefore'], '%b %d %H:%M:%S %Y %Z')
-        not_after = datetime.datetime.strptime(cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
-        
-        print(f"  Valid From: {not_before}")
-        print(f"  Valid To: {not_after}")
-        
-        days_left = (not_after - datetime.datetime.now()).days
-        if days_left < 0:
-            print(f"  ⚠️ EXPIRADO há {-days_left} dias!")
-        elif days_left < get_setting('modules.ssl_scan.warn_expiry_days', 30):
-            print(f"  ⚠️ Atenção: Expira em {days_left} dias!")
-        else:
-            print(f"  ✅ Válido por mais {days_left} dias.")
-            
-        # Cipher suite
-        print(f"  Cipher: {ssock.cipher()}")
-        return cert
-        
+                subject = cert.subject
+                issuer = cert.issuer
+                not_before = cert.not_valid_before
+                not_after = cert.not_valid_after
+                
+                san = []
+                for ext in cert.extensions:
+                    if ext.oid._name == 'subjectAltName':
+                        san = [str(name) for name in ext.value]
+                
+                days_left = (not_after - datetime.datetime.now()).days
+                cipher = ssock.cipher()
+                
+                return {
+                    "target": target,
+                    "port": port,
+                    "subject": str(subject),
+                    "issuer": str(issuer),
+                    "valid_from": str(not_before),
+                    "valid_to": str(not_after),
+                    "days_left": days_left,
+                    "valid": days_left > 0,
+                    "subject_alt_names": san,
+                    "cipher": f"{cipher[0]} ({cipher[1]}, {cipher[2]} bits)"
+                }
+                
+    except socket.timeout:
+        return {"error": f"Timeout ao conectar em {target}:{port}"}
+    except ssl.SSLError as e:
+        return {"error": f"Erro SSL: {str(e)}"}
     except Exception as e:
-        print(f"[-] SSL Scan failed: {e}")
-        return None
+        return {"error": f"Erro: {str(e)}"}
