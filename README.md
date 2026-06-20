@@ -1,43 +1,8 @@
 # 🦫 BeaverSec
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![Python](https://img.shields.io/badge/python-3.8+-green)
-![License](https://img.shields.io/badge/license-MIT-yellow)
-![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen)
-
 **B.E.A.V.E.R.** - *Binary Enumeration & Advanced Vulnerability Exploitation Recon*
 
 Canivete suíço modular para cibersegurança, construído em Python com foco em aprendizado prático, evolução contínua e colaboração open-source.
-
----
-
-## 📋 Índice
-
-- [Sobre o Projeto](#-sobre-o-projeto)
-- [Funcionalidades](#-funcionalidades)
-- [Começando](#-começando)
-- [Como Usar](#-como-usar)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Criando um Novo Módulo](#-criando-um-novo-módulo)
-- [Roadmap](#-roadmap)
-- [Como Contribuir](#-como-contribuir)
-- [Licença](#-licença)
-- [Contato](#-contato)
-
----
-
-## 🎯 Sobre o Projeto
-
-**BeaverSec** é uma ferramenta modular de cibersegurança criada para ser o "canivete suíço" do analista de segurança. Inspirado na filosofia Unix de "faça uma coisa e faça bem", cada módulo é uma ferramenta independente que pode ser executada separadamente.
-
-### 🎓 Motivação
-
-Projeto acadêmico desenvolvido no **1º semestre de TSI (Tecnologia em Sistemas para Internet) na UTFPR - Toledo**. O objetivo é aprender na prática os fundamentos de:
-- Programação em Python
-- Arquitetura de software
-- Redes e protocolos
-- Cibersegurança
-- Desenvolvimento open-source
 
 ---
 
@@ -47,8 +12,8 @@ Projeto acadêmico desenvolvido no **1º semestre de TSI (Tecnologia em Sistemas
 
 | Módulo | Descrição | Exemplo |
 |--------|-----------|---------|
-| `ping_sweep` | Descoberta de hosts ativos via ICMP | `python main.py ping_sweep 192.168.1.0/24` |
-| `port_scanner` | Varredura de portas TCP comuns | `python main.py port_scanner scanme.nmap.org` |
+| `ping_sweep` | Descoberta de hosts ativos via ICMP | `python3 main.py ping_sweep 192.168.1.0/24` |
+| `port_scanner` | Varredura de portas TCP comuns | `python3 main.py port_scanner scanme.nmap.org` |
 
 ### Características Técnicas
 
@@ -77,10 +42,115 @@ git clone https://github.com/ojhonatanls/beaversec.git
 # Entre na pasta
 cd beaversec
 
-# (Opcional) Crie um ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-venv\Scripts\activate     # Windows
+📖 Como Usar
+Comandos Básicos
+bash
 
-# Instale as dependências
-pip install -r requirements.txt
+# Listar módulos disponíveis
+python3 main.py -l
+
+# Executar um módulo
+python3 main.py ping_sweep 8.8.8.8
+
+# Modo detalhado
+python3 main.py ping_sweep 192.168.1.0/24 -v
+
+# Ajuda
+python3 main.py -h
+
+Scripts Rápidos
+bash
+
+# Configurar alias e instalação global
+./setup.sh
+
+# Varredura rápida
+./scan.sh 8.8.8.8
+
+# Varredura automática
+python3 auto_scan.py
+
+# Instalar dependências (se necessário)
+./install.sh
+
+# Atualizar do GitHub
+./update.sh
+
+Instalação Global (Opcional)
+bash
+
+# Instala o comando 'beaver' globalmente
+sudo ln -s $(pwd)/main.py /usr/local/bin/beaver
+
+# Agora pode usar de qualquer lugar:
+beaver -l
+beaver ping_sweep 8.8.8.8
+
+📁 Estrutura do Projeto
+text
+
+beaversec/
+├── beaversec/                 # Pacote principal
+│   ├── core/                  # Núcleo do sistema
+│   │   └── handler.py         # Gerenciador de módulos
+│   ├── modules/               # Módulos (ferramentas)
+│   │   ├── ping_sweep.py      # Varredura ICMP
+│   │   └── port_scanner.py    # Varredura de portas
+│   └── utils/                 # Utilitários
+│       └── logger.py          # Sistema de logging
+├── main.py                    # Ponto de entrada
+├── README.md                  # Documentação
+└── requirements.txt           # Dependências
+
+🛠️ Criando um Novo Módulo
+
+    Crie um arquivo em beaversec/modules/:
+
+python
+
+# beaversec/modules/meu_modulo.py
+def run(target: str, verbose: bool = False) -> None:
+    """Função obrigatória para o módulo"""
+    print(f"Executando meu módulo contra {target}")
+    if verbose:
+        print("Modo detalhado ativado")
+
+    Execute seu módulo:
+
+bash
+
+python3 main.py meu_modulo 8.8.8.8 -v
+
+📖 Documentação
+
+Para um guia detalhado com todos os comandos, exemplos e scripts:
+
+    📄 Bíblia do BeaverSec (PDF) - Guia completo para impressão
+
+    📝 Bíblia do BeaverSec (MD) - Versão Markdown interativa
+
+🤝 Contribuindo
+
+Contribuições são bem-vindas!
+
+    Faça um fork do projeto
+
+    Crie uma branch: git checkout -b feature/nova-funcionalidade
+
+    Commit suas mudanças: git commit -m "Adiciona nova funcionalidade"
+
+    Push: git push origin feature/nova-funcionalidade
+
+    Abra um Pull Request
+
+Reporte bugs ou sugira melhorias nas Issues.
+📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+🎓 Projeto Acadêmico
+
+Desenvolvido no 1º semestre de TSI (Tecnologia em Sistemas para Internet) na UTFPR - Toledo.
+
+🦫 BeaverSec - Binary Enumeration & Advanced Vulnerability Exploitation Recon
+
+"Conhecimento compartilhado é conhecimento multiplicado."
