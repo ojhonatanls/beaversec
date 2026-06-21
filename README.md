@@ -8,7 +8,7 @@
 
 BeaverSec é uma ferramenta modular de segurança cibernética com arquitetura extensível.
 
-##  Módulos Disponíveis
+## 📋 Módulos Disponíveis
 
 - 🖥️ **ping_sweep** - Verifica hosts ativos via ICMP
 - 🔌 **port_scanner** - Escaneia portas TCP abertas
@@ -18,7 +18,7 @@ BeaverSec é uma ferramenta modular de segurança cibernética com arquitetura e
 - 🔍 **subdomain_brute** - Descobre subdomínios por brute force
 - 🗺️ **traceroute** - Rastreia a rota até o alvo
 
-##  Instalação
+## 🚀 Instalação
 
 ```bash
 git clone https://github.com/ojhonatanls/BeaverSec.git
@@ -26,9 +26,11 @@ cd BeaverSec
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
 
-##  Como usar
+## 💻 Como usar
 
+```bash
 # Listar módulos disponíveis
 python main.py -l
 
@@ -40,11 +42,15 @@ python main.py ping_sweep 8.8.8.8 -v
 
 # Salvar resultado em JSON
 python main.py ping_sweep 8.8.8.8 -o resultado.json
+```
 
-##  Exemplo de saída
+## 📊 Exemplo de saída
 
+```bash
 python main.py ping_sweep 8.8.8.8
+```
 
+```
 ==================================================
 📊 RESULTADO DO MÓDULO: PING_SWEEP
 ==================================================
@@ -52,8 +58,12 @@ Host: 8.8.8.8
 Status: ✅ ATIVO
 Latência: 24.10ms
 ==================================================
+```
 
-##  Licença
+## 📝 Licença
+
 MIT © 2024
 
-<p align="center">Desenvolvido por <a href="https://github.com/ojhonatanls">Jhonatan</a> 🦫</p>
+---
+
+<p align="center">Feito com 🦫 por <a href="https://github.com/ojhonatanls">Jhonatan</a></p>
