@@ -6,7 +6,9 @@
 
 **Ferramenta modular para pentest, reconhecimento e análise de segurança**
 
-## 📋 Módulos Disponíveis
+BeaverSec é uma ferramenta modular de segurança cibernética com arquitetura extensível.
+
+##  Módulos Disponíveis
 
 - 🖥️ **ping_sweep** - Verifica hosts ativos via ICMP
 - 🔌 **port_scanner** - Escaneia portas TCP abertas
@@ -24,3 +26,34 @@ cd BeaverSec
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+
+##  Como usar
+
+# Listar módulos disponíveis
+python main.py -l
+
+# Executar ping sweep
+python main.py ping_sweep 8.8.8.8
+
+# Executar com verbose
+python main.py ping_sweep 8.8.8.8 -v
+
+# Salvar resultado em JSON
+python main.py ping_sweep 8.8.8.8 -o resultado.json
+
+##  Exemplo de saída
+
+python main.py ping_sweep 8.8.8.8
+
+==================================================
+📊 RESULTADO DO MÓDULO: PING_SWEEP
+==================================================
+Host: 8.8.8.8
+Status: ✅ ATIVO
+Latência: 24.10ms
+==================================================
+
+##  Licença
+MIT © 2024
+
+<p align="center">Desenvolvido por <a href="https://github.com/ojhonatanls">Jhonatan</a> 🦫</p>
