@@ -2,9 +2,9 @@
   <img src="assets/BeaverSec2.png" alt="BeaverSec Banner" width="100%">
 </p>
 
-# 🦫 BeaverSec - Canivete suíço para cibersegurança
+# 🦫 BeaverSec - Segurança Ofensiva Modular
 
-BeaverSec é uma ferramenta modular de segurança cibernética com arquitetura extensível.
+**Ferramenta modular para pentest, reconhecimento e análise de segurança**
 
 ## 📋 Módulos Disponíveis
 
