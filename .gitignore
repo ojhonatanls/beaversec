@@ -16,3 +16,43 @@ __pycache__/
 venv/
 __pycache__/
 *.pyc
+
+# VS Code
+.vscode/*.db
+.vscode/*.db-shm
+.vscode/*.db-wal
+.vscode/.browse.*
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Cache
+*.cache
+*.bak
+*.swp
+*.swo
+
+# Resultados
+*.json
+*.html
+report_*.json
+report_*.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.tmp
+*.temp
+
