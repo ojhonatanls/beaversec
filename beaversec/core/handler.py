@@ -4,7 +4,7 @@ ModuleHandler - Gerencia dinamicamente todos os módulos do BeaverSec
 import importlib
 import pkgutil
 import sys
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from beaversec import modules as module_pkg
 from beaversec.utils.logger import setup_logger
 
@@ -49,9 +49,9 @@ class ModuleHandler:
         """Retorna o módulo pelo nome, ou None se não existir."""
         return self.modules.get(module_name)
 
-    def run_module(self, module_name: str, target: str, verbose: bool = False) -> None:
+    def run_module(self, module_name: str, target: str, verbose: bool = False, **kwargs) -> Dict[str, Any]:
         """
-        Executa um módulo específico com o alvo fornecido.
+        Executa um módulo específico e retorna o resultado.
         Levanta ModuleNotFoundError se o módulo não existir.
         """
         module = self.get_module(module_name)
@@ -60,10 +60,18 @@ class ModuleHandler:
         
         self.logger.info(f"Executando '{module_name}' contra '{target}'...")
         try:
-            module.run(target, verbose=verbose)
+            # Executa e CAPTURA o retorno
+            result = module.run(target, verbose=verbose, **kwargs)
+            return result
         except KeyboardInterrupt:
             self.logger.warning("Execução interrompida pelo usuário.")
             raise
         except Exception as e:
             self.logger.error(f"Erro durante execução do módulo '{module_name}': {e}")
-            raise
+            return {"error": str(e)}
+
+    def execute(self, module_name: str, target: str, **kwargs) -> Dict[str, Any]:
+        """
+        Método principal para executar módulos (interface simplificada).
+        """
+        return self.run_module(module_name, target, **kwargs)
