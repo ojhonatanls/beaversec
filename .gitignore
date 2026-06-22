@@ -1,30 +1,42 @@
-# BeaverSec - unified installer for development
-#!/usr/bin/env bash
-set -euo pipefail
+# BeaverSec - repository ignore rules
 
-# Create a virtual environment and install editable package + dev extras (if available)
-PY=${PY:-python3}
-VENV_DIR=${VENV_DIR:-.venv}
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
 
-echo "🦫 BeaverSec - Criando ambiente virtual em $VENV_DIR"
-$PY -m venv "$VENV_DIR"
-source "$VENV_DIR/bin/activate"
+# Virtual environments
+.venv/
+venv/
+env/
+.Python
 
-if [ -f "pyproject.toml" ]; then
-    echo "📦 Instalando dependências a partir do pyproject.toml (via pip)"
-    pip install --upgrade pip
-    # If package has extras named 'dev', install them for tests/linters
-    pip install -e ".[dev]" || pip install -e . || true
-elif [ -f "requirements.txt" ]; then
-    echo "📦 Instalando dependências do requirements.txt"
-    pip install -r requirements.txt
-else
-    echo "ℹ️  Nenhum gerenciador de dependências encontrado."
-fi
+# Distribution / build
+build/
+dist/
+*.egg-info/
 
-# Make main executable
-chmod +x main.py
+# Python artifacts
+*.pyc
+*.pyo
+*.pyd
 
-# Suggest running tests
-echo "✅ Instalação concluída. Ative o venv: source $VENV_DIR/bin/activate"
-echo "Para rodar testes: pytest -q"
+# Logs and reports
+*.log
+report_*.json
+report_*.html
+
+# Data directory (scan results, temporary files)
+data/
+
+# Test and type-check caches
+.pytest_cache/
+.mypy_cache/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
