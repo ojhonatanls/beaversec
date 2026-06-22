@@ -1,0 +1,2 @@
+module,target,success,duration,data,errors
+port_scanner,127.0.0.1,True,0.10,"{'open_ports': [631], 'count': 1}",
