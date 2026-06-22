@@ -1,6 +1,7 @@
 """Módulo de scanner de portas."""
 
 import socket
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Any
 
@@ -39,10 +40,10 @@ def run(target: str, **kwargs) -> Dict[str, Any]:
     
     # Resolve hostname
     try:
-        ip = socket.gethostbyname(target)
-        print(f"   Resolvido: {ip}")
+        resolved_host = socket.gethostbyname(target)
+        print(f"   Resolvido: {resolved_host}")
     except:
-        ip = target
+        resolved_host = target
     
     # Escaneia
     open_ports = []
@@ -51,7 +52,7 @@ def run(target: str, **kwargs) -> Dict[str, Any]:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(timeout)
-            result = sock.connect_ex((ip, port))
+            result = sock.connect_ex((resolved_host, port))
             sock.close()
             return port if result == 0 else None
         except:
@@ -67,8 +68,12 @@ def run(target: str, **kwargs) -> Dict[str, Any]:
                 print(f"   ✅ Porta {result} ({service}) aberta")
     
     return {
-        "target": ip,
-        "open_ports": sorted(open_ports),
-        "open_count": len(open_ports),
-        "total_scanned": len(ports)
+        "module_name": "port_scanner",
+        "target": target,
+        "status": "success",
+        "data": {
+            "open_ports": sorted(open_ports),
+            "host": resolved_host
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
