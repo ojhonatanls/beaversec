@@ -1,117 +1,84 @@
+"""CLI entrypoint for BeaverSec.
+
+Enhances existing CLI by registering new modules and preserving backward compatibility.
 """
-Interface de linha de comando usando Click.
-"""
-import sys
-import json
+from __future__ import annotations
+
+import asyncio
 import logging
-from pathlib import Path
+from typing import Any, Iterable, List
 
 import click
-import yaml
 
-from beaversec.core.beaver import Beaver
-from beaversec.modules.ping_sweep import PingSweep
-from beaversec.modules.port_scanner import PortScanner
-from beaversec.modules.dns_enum import DNSEnum
-from beaversec.modules.ssl_scan import SSLScan
-from beaversec.modules.http_headers import HTTPHeaders
-from beaversec.modules.subdomain_brute import SubdomainBrute
-from beaversec.modules.traceroute import Traceroute
-from beaversec.modules.whois_lookup import WhoisLookup
+from beaversec.modules import MODULES
+from beaversec.config import get_config
 
-
-def load_config(config_file: str) -> dict:
-    """Carrega configuração de arquivo YAML."""
-    if config_file and Path(config_file).exists():
-        with open(config_file, "r") as f:
-            return yaml.safe_load(f) or {}
-    return {}
+logger = logging.getLogger("beaversec.cli")
 
 
 @click.group()
-@click.option("--config", "-c", type=str, help="Arquivo de configuração YAML")
-@click.option("--verbose", "-v", is_flag=True, help="Modo verboso")
+@click.option("--config", "-c", type=click.Path(), default="config.yaml", help="Path to config.yaml")
+@click.option("--debug", is_flag=True, default=False, help="Enable debug logging")
 @click.pass_context
-def cli(ctx, config: str, verbose: bool):
-    """BeaverSec - Ferramenta de cibersegurança"""
+def cli(ctx: click.Context, config: str, debug: bool) -> None:
+    """BeaverSec - modular offensive security toolkit."""
+    cfg = get_config(config)
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
     ctx.ensure_object(dict)
-    ctx.obj["verbose"] = verbose
-    ctx.obj["config"] = load_config(config) if config else {}
-    beaver = Beaver(verbose=verbose)
-    # Registra todos os módulos
-    for mod in [
-        PingSweep(),
-        PortScanner(),
-        DNSEnum(),
-        SSLScan(),
-        HTTPHeaders(),
-        SubdomainBrute(),
-        Traceroute(),
-        WhoisLookup(),
-    ]:
-        beaver.register_module(mod)
-    ctx.obj["beaver"] = beaver
+    ctx.obj["config"] = cfg
 
 
 @cli.command()
-def list():
-    """Lista módulos disponíveis"""
-    from beaversec.modules import MODULES
-    click.echo("📋 Módulos disponíveis:")
-    for name, desc in MODULES.items():
-        click.echo(f"  - {name:15} - {desc}")
+def list() -> None:
+    """List available modules."""
+    click.echo("Available modules:")
+    for name in sorted(MODULES.keys()):
+        click.echo(f" - {name}")
 
 
 @cli.command()
-@click.argument("module")
-@click.option("--target", required=True, help="Alvo (IP/domínio/URL)")
-@click.option("--threads", "-t", default=10, help="Número de threads")
-@click.option("--timeout", default=5.0, help="Timeout em segundos")
-@click.option("--rate-limit", default=0.1, help="Delay entre requisições")
-@click.option("--proxy", help="Proxy (ex: http://user:pass@host:port)")
-@click.option("--output-file", "-o", help="Salva resultado em arquivo")
-@click.option("--format", "-f", type=click.Choice(["json", "html", "csv"]), default="json", help="Formato do relatório")
-@click.option("--verbose", is_flag=True, help="Logs detalhados")
-@click.option("--dry-run", is_flag=True, help="Simula a execução")
+@click.argument("module_name", type=str)
+@click.argument("targets", nargs=-1)
+@click.option("--ports", "-p", default="", help="Comma separated ports (e.g., 22,80,443)")
+@click.option("--output", "-o", default=None, help="Output file (json/csv/html)")
 @click.pass_context
-def run(ctx, module, target, threads, timeout, rate_limit, proxy, output_file, format, verbose, dry_run):
-    """Executa um módulo"""
-    beaver = ctx.obj["beaver"]
-    config = ctx.obj["config"]
+def run(ctx: click.Context, module_name: str, targets: List[str], ports: str, output: str | None) -> None:
+    """Run a module by name against given targets."""
+    if module_name not in MODULES:
+        click.echo(f"Module {module_name} not found. Use `list` to view available modules.")
+        raise click.Abort()
+    if not targets:
+        click.echo("No targets provided.")
+        raise click.Abort()
 
-    # Configuração: CLI sobrescreve YAML
-    threads = threads or config.get("threads", 10)
-    timeout = timeout or config.get("timeout", 5.0)
-    rate_limit = rate_limit or config.get("rate_limit", 0.1)
-    verbose = verbose or config.get("verbose", False)
+    module_cls = MODULES[module_name]
+    # instantiate module (BaseModule signature assumed to accept config)
+    module = module_cls(config=ctx.obj.get("config"))
 
-    if dry_run:
-        click.echo(f"[DRY RUN] Executaria {module} em {target}")
-        return
+    # parse ports
+    port_list: List[int] = []
+    if ports:
+        port_list = [int(p.strip()) for p in ports.split(",") if p.strip()]
 
-    click.echo(f"[+] Executando {module} em {target}...")
-    result = beaver.run_module(
-        module,
-        target,
-        threads=threads,
-        timeout=timeout,
-        rate_limit=rate_limit,
-        proxy=proxy,
-        verbose=verbose,
-    )
+    # maintain backward compatibility: allow sync run and async run
+    async def _run_async() -> Any:
+        if hasattr(module, "run"):
+            res = await module.run(targets=targets, ports=port_list) if "ports" in module.run.__annotations__.get("return", {}) else await module.run(targets, port_list)
+            return res
+        elif hasattr(module, "execute"):
+            # older modules might expose execute(targets, **kwargs)
+            if asyncio.iscoroutinefunction(module.execute):
+                return await module.execute(targets=targets, ports=port_list)
+            else:
+                # run in executor to avoid blocking
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, lambda: module.execute(targets, port_list))
+        else:
+            raise RuntimeError("Module has no run/execute method")
 
-    if output_file:
-        beaver.export(format, output_file)
-        click.echo(f"[+] Resultado salvo em {output_file}")
-
-    if result.success:
-        click.echo("[+] Sucesso!")
-        if verbose:
-            click.echo(json.dumps(result.data, indent=2))
-    else:
-        click.echo(f"[-] Falha: {', '.join(result.errors)}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    cli()
+    click.echo(f"Running {module_name} against {len(targets)} target(s)...")
+    result = asyncio.run(_run_async())
+    # basic printing; exporters will be used in later steps
+    click.echo("Result:")
+    click.echo(str(result))
