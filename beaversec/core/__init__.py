@@ -1,4 +1,3 @@
 """
-Core do BeaverSec - Gerenciamento de módulos e infraestrutura
+Núcleo do BeaverSec.
 """
-from .handler import ModuleHandler

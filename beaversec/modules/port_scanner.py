@@ -1,79 +1,71 @@
-"""Módulo de scanner de portas."""
-
+"""
+Módulo de escaneamento de portas TCP.
+"""
+import logging
 import socket
-from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Any
+from ipaddress import ip_address
 
-COMMON_SERVICES = {
-    21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP",
-    53: "DNS", 80: "HTTP", 110: "POP3", 135: "RPC",
-    139: "NetBIOS", 143: "IMAP", 443: "HTTPS", 445: "SMB",
-    993: "IMAPS", 995: "POP3S", 3306: "MySQL", 3389: "RDP",
-    5900: "VNC", 8080: "HTTP-Alt"
-}
+from beaversec.core.base_module import BaseModule, ModuleResult
 
-def run(target: str, **kwargs) -> Dict[str, Any]:
-    """
-    Escaneia portas de um alvo.
-    
-    Args:
-        target: IP ou domínio
-        **kwargs: ports (str), timeout (int), max_threads (int)
-    """
-    ports_str = kwargs.get("ports", "21,22,23,25,53,80,443,3306,3389,8080")
-    timeout = kwargs.get("timeout", 2)
-    max_threads = kwargs.get("max_threads", 10)
-    
-    # Parse ports
-    ports = []
-    for part in ports_str.split(','):
-        part = part.strip()
-        if '-' in part:
-            start, end = part.split('-')
-            ports.extend(range(int(start), int(end) + 1))
-        else:
-            ports.append(int(part))
-    ports = sorted(set(ports))
-    
-    print(f"🔍 Escaneando {target} - {len(ports)} portas...")
-    
-    # Resolve hostname
-    try:
-        resolved_host = socket.gethostbyname(target)
-        print(f"   Resolvido: {resolved_host}")
-    except:
-        resolved_host = target
-    
-    # Escaneia
-    open_ports = []
-    
-    def scan_port(port):
+logger = logging.getLogger(__name__)
+
+
+class PortScanner(BaseModule):
+    """Escaneamento de portas TCP com threading."""
+
+    name = "port-scanner"
+    description = "Escaneamento de portas TCP"
+
+    def _scan_port(self, ip: str, port: int, timeout: float) -> int | None:
+        """Tenta conectar a uma porta."""
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(timeout)
-            result = sock.connect_ex((resolved_host, port))
+            result = sock.connect_ex((ip, port))
             sock.close()
             return port if result == 0 else None
-        except:
+        except Exception:
             return None
-    
-    with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        futures = {executor.submit(scan_port, port): port for port in ports}
-        for future in as_completed(futures):
-            result = future.result()
-            if result:
-                open_ports.append(result)
-                service = COMMON_SERVICES.get(result, "Unknown")
-                print(f"   ✅ Porta {result} ({service}) aberta")
-    
-    return {
-        "module_name": "port_scanner",
-        "target": target,
-        "status": "success",
-        "data": {
-            "open_ports": sorted(open_ports),
-            "host": resolved_host
-        },
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
+
+    def run(self, target: str, **kwargs) -> ModuleResult:
+        self._log_start(target)
+        validated = self.validate_input(target, **kwargs)
+
+        try:
+            ip_address(target)  # valida
+        except ValueError as e:
+            return ModuleResult(
+                module=self.name,
+                target=target,
+                success=False,
+                errors=[f"Alvo inválido: {e}"],
+            )
+
+        # Lista de portas comuns (1-1024 + algumas conhecidas)
+        ports = list(range(1, 1025)) + [3306, 5432, 27017, 6379, 9200, 9300]
+        open_ports = []
+
+        logger.info(f"Escaneando {len(ports)} portas em {target}")
+
+        with ThreadPoolExecutor(max_workers=validated.threads) as executor:
+            futures = {
+                executor.submit(self._scan_port, target, p, validated.timeout): p
+                for p in ports
+            }
+            for future in as_completed(futures):
+                port = futures[future]
+                try:
+                    res = future.result()
+                    if res:
+                        open_ports.append(res)
+                        logger.debug(f"Porta aberta: {res}")
+                except Exception as e:
+                    logger.warning(f"Erro na porta {port}: {e}")
+
+        return ModuleResult(
+            module=self.name,
+            target=target,
+            success=True,
+            data={"open_ports": sorted(open_ports), "count": len(open_ports)},
+        )

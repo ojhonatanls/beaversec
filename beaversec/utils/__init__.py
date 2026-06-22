@@ -1,1 +1,3 @@
-# BeaverSec Utils
+"""
+Utilitários do BeaverSec.
+"""

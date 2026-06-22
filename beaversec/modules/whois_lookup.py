@@ -1,41 +1,48 @@
-import whois
-from datetime import datetime, timezone
+"""
+Consulta WHOIS para domínios.
+"""
+import logging
 
-def run(target, **kwargs):
-    """
-    Consulta informações WHOIS de um domínio.
-    Exemplo: python main.py whois_lookup google.com
-    """
-    try:
-        w = whois.whois(target)
-        
-        print(f"\n[+] WHOIS Lookup for {target}")
-        print(f"  Registrar: {w.registrar}")
-        print(f"  Creation Date: {w.creation_date}")
-        print(f"  Expiration Date: {w.expiration_date}")
-        print(f"  Name Servers: {w.name_servers}")
-        print(f"  Status: {w.status}")
-        print(f"  Emails: {w.emails}")
-        
-        # Verifica se está expirando (corrigido para timezone)
-        if w.expiration_date:
-            if isinstance(w.expiration_date, list):
-                exp = w.expiration_date[0]
-            else:
-                exp = w.expiration_date
-            
-            # Se a data não tiver timezone, adiciona o timezone UTC
-            if exp.tzinfo is None:
-                exp = exp.replace(tzinfo=timezone.utc)
-            
-            now = datetime.now(timezone.utc)
-            days_left = (exp - now).days
-            
-            if days_left < 30:
-                print(f"  ⚠️ Domínio expira em {days_left} dias!")
-        
-        return w
-        
-    except Exception as e:
-        print(f"[-] WHOIS lookup failed: {e}")
-        return None
+import whois
+
+from beaversec.core.base_module import BaseModule, ModuleResult
+
+logger = logging.getLogger(__name__)
+
+
+class WhoisLookup(BaseModule):
+    """Consulta WHOIS de domínios."""
+
+    name = "whois"
+    description = "Consulta WHOIS de domínios"
+
+    def run(self, target: str, **kwargs) -> ModuleResult:
+        self._log_start(target)
+        validated = self.validate_input(target, **kwargs)
+
+        try:
+            w = whois.whois(target)
+            data = {
+                "domain_name": w.domain_name,
+                "registrar": w.registrar,
+                "whois_server": w.whois_server,
+                "creation_date": str(w.creation_date) if w.creation_date else None,
+                "expiration_date": str(w.expiration_date) if w.expiration_date else None,
+                "name_servers": w.name_servers,
+                "status": w.status,
+                "emails": w.emails,
+                "dnssec": w.dnssec,
+            }
+            return ModuleResult(
+                module=self.name,
+                target=target,
+                success=True,
+                data=data,
+            )
+        except Exception as e:
+            return ModuleResult(
+                module=self.name,
+                target=target,
+                success=False,
+                errors=[str(e)],
+            )

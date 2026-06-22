@@ -1,52 +1,73 @@
-"""Módulo de análise de headers HTTP."""
+"""
+Análise de cabeçalhos HTTP de segurança.
+"""
+import logging
 
 import requests
-from typing import Dict, Any
-from beaversec.utils.security import validate_target
 
-SECURITY_HEADERS = {
-    'Strict-Transport-Security': 'HSTS',
-    'Content-Security-Policy': 'CSP',
-    'X-Frame-Options': 'Clickjacking protection',
-    'X-Content-Type-Options': 'MIME sniffing protection',
-    'Referrer-Policy': 'Referrer policy',
-    'Permissions-Policy': 'Permissions policy',
-}
+from beaversec.core.base_module import BaseModule, ModuleResult
 
-def run(target: str, **kwargs) -> Dict[str, Any]:
-    """Analisa headers HTTP de segurança do alvo."""
-    if not target.startswith(('http://', 'https://')):
-        target = f"https://{target}"
-    
-    timeout = kwargs.get('timeout', 5)
-    
-    try:
-        response = requests.get(target, timeout=timeout, allow_redirects=True)
-        headers = response.headers
-        results = {}
-        
-        for header, desc in SECURITY_HEADERS.items():
-            if header in headers:
-                results[header] = {
-                    'present': True,
-                    'value': headers[header],
-                    'description': desc
-                }
-            else:
-                results[header] = {
-                    'present': False,
-                    'description': desc
-                }
-        
-        results['_server'] = headers.get('Server', 'Desconhecido')
-        results['_status_code'] = response.status_code
-        results['_url_final'] = response.url
-        
-        return results
-        
-    except requests.exceptions.Timeout:
-        return {"error": f"Timeout ao conectar em {target}"}
-    except requests.exceptions.ConnectionError:
-        return {"error": f"Falha de conexão com {target}"}
-    except Exception as e:
-        return {"error": f"Erro: {str(e)}"}
+logger = logging.getLogger(__name__)
+
+
+class HTTPHeaders(BaseModule):
+    """Analisa cabeçalhos HTTP de segurança."""
+
+    name = "http-headers"
+    description = "Análise de cabeçalhos HTTP de segurança"
+
+    def run(self, target: str, **kwargs) -> ModuleResult:
+        self._log_start(target)
+        validated = self.validate_input(target, **kwargs)
+
+        if not target.startswith(("http://", "https://")):
+            target = "https://" + target
+
+        proxies = None
+        if validated.proxy:
+            proxies = {"http": validated.proxy, "https": validated.proxy}
+
+        try:
+            session = requests.Session()
+            session.proxies = proxies
+            session.timeout = validated.timeout
+
+            resp = session.get(target, allow_redirects=True, verify=False)
+            headers = dict(resp.headers)
+
+            # Análise de segurança
+            security_headers = {
+                "Strict-Transport-Security": "HSTS",
+                "Content-Security-Policy": "CSP",
+                "X-Frame-Options": "Clickjacking",
+                "X-Content-Type-Options": "MIME Sniffing",
+                "Referrer-Policy": "Referrer",
+                "Permissions-Policy": "Permissions",
+            }
+
+            analysis = {}
+            for hdr, name in security_headers.items():
+                if hdr in headers:
+                    analysis[name] = {"present": True, "value": headers[hdr]}
+                else:
+                    analysis[name] = {"present": False, "value": None}
+
+            return ModuleResult(
+                module=self.name,
+                target=target,
+                success=True,
+                data={
+                    "headers": headers,
+                    "security_analysis": analysis,
+                    "status_code": resp.status_code,
+                    "server": headers.get("Server", "unknown"),
+                },
+            )
+
+        except Exception as e:
+            return ModuleResult(
+                module=self.name,
+                target=target,
+                success=False,
+                errors=[str(e)],
+            )

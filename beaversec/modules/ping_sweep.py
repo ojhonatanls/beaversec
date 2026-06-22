@@ -1,78 +1,84 @@
 """
-beaversec/modules/ping_sweep.py
-
-Refactored to use BaseModule and provide a compatibility run() function.
+Módulo de varredura ICMP (ping sweep).
 """
-from __future__ import annotations
-
-import platform
-import re
-import subprocess
 import logging
-from typing import Any, Dict, Optional
+import shlex
+import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from ipaddress import ip_address, ip_network
 
-from beaversec.core.base_module import BaseModule, ModuleExecutionError
+from icmplib import ping
+
+from beaversec.core.base_module import BaseModule, ModuleResult
+
+logger = logging.getLogger(__name__)
 
 
 class PingSweep(BaseModule):
-    """Ping sweep module that uses the BaseModule interface."""
+    """Varredura de hosts ativos via ICMP."""
 
-    __module_name__ = "ping_sweep"
+    name = "ping-sweep"
+    description = "Varredura ICMP para hosts ativos"
 
-    def validate_target(self, target: str) -> None:
-        if not target:
-            raise ValueError("Target não pode ser vazio")
-        # For ping we accept IPs, domains, CIDRs; further validation can be added
+    def _ping_host(self, ip: str, timeout: float) -> bool:
+        """Tenta pingar um host. Fallback para subprocess se icmplib falhar."""
+        try:
+            # Tenta usar icmplib (mais rápido, mas precisa de permissões)
+            result = ping(ip, count=1, timeout=timeout, privileged=False)
+            return result.is_alive
+        except Exception as e:
+            logger.debug(f"icmplib falhou para {ip}: {e}, usando fallback")
+            # Fallback com subprocess sanitizado
+            cmd = ["ping", "-c", "1", "-W", str(int(timeout)), ip]
+            try:
+                subprocess.run(cmd, check=False, capture_output=True, timeout=timeout + 1)
+                return True
+            except Exception:
+                return False
 
-    def execute(self, target: str, timeout: int = 3, count: int = 1, **kwargs) -> Dict[str, Optional[Any]]:
-        system = platform.system()
-        if system == "Windows":
-            # -n count, -w timeout in milliseconds
-            cmd = ["ping", "-n", str(count), "-w", str(timeout * 1000), target]
-        else:
-            # Unix-like: -c count, -W timeout (seconds) on many distros
-            cmd = ["ping", "-c", str(count), "-W", str(timeout), target]
-
-        self.log(f"Executando: {' '.join(cmd)}", level=logging.DEBUG)
+    def run(self, target: str, **kwargs) -> ModuleResult:
+        self._log_start(target)
+        validated = self.validate_input(target, **kwargs)
+        hosts = []
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 5)
-        except subprocess.TimeoutExpired:
-            raise ModuleExecutionError("timeout")
-        except Exception as e:
-            raise ModuleExecutionError(str(e))
+            # Suporta CIDR ou IP único
+            if "/" in target:
+                network = ip_network(target, strict=False)
+                ip_list = [str(ip) for ip in network.hosts()]
+            else:
+                # Valida IP único
+                ip_address(target)
+                ip_list = [target]
+        except ValueError as e:
+            return ModuleResult(
+                module=self.name,
+                target=target,
+                success=False,
+                errors=[f"Alvo inválido: {e}"],
+            )
 
-        alive = (result.returncode == 0)
-        rtt = None
-        if result.stdout:
-            match = re.search(r"(?:time[=<]\s*|tempo=)\s*([0-9]+(?:\.[0-9]+)?)", result.stdout)
-            if match:
+        active = []
+        total = len(ip_list)
+        logger.info(f"Varrendo {total} hosts com {validated.threads} threads")
+
+        with ThreadPoolExecutor(max_workers=validated.threads) as executor:
+            futures = {
+                executor.submit(self._ping_host, ip, validated.timeout): ip
+                for ip in ip_list
+            }
+            for future in as_completed(futures):
+                ip = futures[future]
                 try:
-                    rtt = float(match.group(1))
-                except Exception:
-                    rtt = None
+                    if future.result():
+                        active.append(ip)
+                        logger.debug(f"Host ativo: {ip}")
+                except Exception as e:
+                    logger.warning(f"Erro ao pingar {ip}: {e}")
 
-        return {
-            "host": target,
-            "alive": alive,
-            "rtt": rtt,
-            "output": result.stdout.strip() if result.stdout else None,
-            "stderr": result.stderr.strip() if result.stderr else None,
-        }
-
-    def format_output(self, raw_result: Dict[str, Optional[Any]]) -> Dict[str, Any]:
-        return {
-            "target": raw_result.get("host"),
-            "status": "alive" if raw_result.get("alive") else "down",
-            "data": {
-                "rtt": raw_result.get("rtt"),
-                "raw_output": raw_result.get("output"),
-            },
-        }
-
-
-# Compatibility function expected by CLI (module.run)
-def run(target: str, **kwargs) -> Dict[str, Any]:
-    logger = logging.getLogger("BeaverSec")
-    module = PingSweep(verbose=bool(kwargs.get("verbose", False)), logger=logger)
-    return module.run(target, **kwargs)
+        return ModuleResult(
+            module=self.name,
+            target=target,
+            success=True,
+            data={"total": total, "active": active, "active_count": len(active)},
+        )
