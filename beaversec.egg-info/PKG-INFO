@@ -1,139 +1,58 @@
 Metadata-Version: 2.4
 Name: beaversec
-Version: 0.2.0
-Summary: Ferramenta modular de cibersegurança para pentest
-Author-email: Jhonatan <jhonatan@example.com>
-License-Expression: MIT
+Version: 3.0.0
+Summary: Ferramenta modular de segurança ofensiva
+Author-email: Jhonatan <jhonatanlucassantos9@gmail.com>
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
-Requires-Dist: click>=8.0
+Requires-Dist: click>=8.1
+Requires-Dist: pydantic>=1.10
+Requires-Dist: aiohttp>=3.8
 Requires-Dist: pyyaml>=6.0
-Requires-Dist: pydantic>=2.0
-Requires-Dist: rich>=13.0
-Requires-Dist: jinja2>=3.0
-Requires-Dist: requests>=2.31
-Requires-Dist: dnspython>=2.4
+Requires-Dist: dnspython>=2.3
+Requires-Dist: shodan>=1.27
+Requires-Dist: pysnmp>=4.4
+Requires-Dist: scapy>=2.4
+Requires-Dist: cryptography>=41.0
+Requires-Dist: python-multipart>=0.0.6
+Requires-Dist: pytest>=7.0
 
-<p align="center">
-  <img src="assets/BeaverSec2.png" alt="BeaverSec Banner" width="100%">
-</p>
+# BeaverSec
 
-# 🦫 BeaverSec - Segurança Ofensiva Modular
+BeaverSec - Modular Offensive Security (v3.0)
 
-**Ferramenta modular para pentest, reconhecimento e análise de segurança**
+Overview
+- Modular scanning framework with BaseModule-based modules.
+- New modules in 3.0: syn_scan, udp_scan, arp_scan, os_detection, service_detection, vuln_scanner, ssl_cipher_scan, dns_zone_transfer, shodan_enum, snmp_enum.
+- Async I/O with aiohttp, token-bucket rate limiting, proxy / Tor support.
 
-BeaverSec é uma ferramenta modular de segurança cibernética com arquitetura extensível.
+Quickstart
+1. Install dependencies:
+   pip install -r requirements.txt
 
-## 📋 Módulos Disponíveis
+2. Edit config.yaml to add API keys (Shodan, SecurityTrails, NVD) and optional proxy settings.
 
-- 🖥️ **ping_sweep** - Verifica hosts ativos via ICMP
-- 🔌 **port_scanner** - Escaneia portas TCP abertas
-- 🌐 **dns_enum** - Enumera registros DNS
-- 🔒 **ssl_scan** - Analisa certificados SSL/TLS
-- 📋 **http_headers** - Analisa headers HTTP de segurança
-- 🔍 **subdomain_brute** - Descobre subdomínios por brute force
-- 🗺️ **traceroute** - Rastreia a rota até o alvo
-- 🕵️ **whois_lookup** - Consulta WHOIS de domínios
+3. Example usage:
+   beaversec list
+   beaversec run port_scanner 192.0.2.1 -p 22,80,443
+   beaversec run subdomain_brute example.com --wordlist common.txt
 
-## 🚀 Instalação
+New features in v3.0
+- Rate limiting using token-bucket across modules.
+- Proxy and Tor support for HTTP-based modules.
+- Cipher enumeration and improved SSL scanning with basic vulnerability heuristics.
+- Shodan and SecurityTrails integrations for enrichment.
+- Async modules for better performance.
 
-```bash
-git clone https://github.com/ojhonatanls/BeaverSec.git
-cd BeaverSec
-python3 -m venv venv
-source venv/bin/activate
-pip install -e .
-```
+Developer notes
+- Modules are registered automatically in beaversec/modules/__init__.py.
+- CLI remains backward compatible; older modules exposing execute() are still supported.
+- Tests are skeletonized under `tests/` — add assertions and mocks as needed.
 
-## 💻 Como usar
-
-### Listar módulos disponíveis
-```bash
-beaversec list
-```
-
-### Executar um módulo
-```bash
-# Ping sweep
-beaversec run ping_sweep --target 8.8.8.8
-
-# Port scanner
-beaversec run port_scanner --target 127.0.0.1
-
-# DNS enumeration
-beaversec run dns_enum --target example.com
-
-# Subdomain brute force
-beaversec run subdomain_brute --target example.com
-
-# WHOIS lookup
-beaversec run whois_lookup --target example.com
-```
-
-### Salvar resultado em JSON
-```bash
-beaversec run port_scanner --target 127.0.0.1 --output-file resultado.json --format json
-```
-
-### Salvar resultado em CSV
-```bash
-beaversec run port_scanner --target 127.0.0.1 --output-file resultado.csv --format csv
-```
-
-### Salvar resultado em HTML
-```bash
-beaversec run port_scanner --target 127.0.0.1 --output-file resultado.html --format html
-```
-
-### Modo verbose
-```bash
-beaversec run ping_sweep --target 8.8.8.8 --verbose
-```
-
-### Timeout customizado
-```bash
-beaversec run dns_enum --target example.com --timeout 10
-```
-
-## 📊 Exemplo de saída
-
-```bash
-beaversec run ping_sweep --target 8.8.8.8
-```
-
-```json
-{
-  "module": "ping_sweep",
-  "target": "8.8.8.8",
-  "success": true,
-  "timestamp": "2024-06-22T10:30:45Z",
-  "duration": 1.234,
-  "data": {
-    "host": "8.8.8.8",
-    "status": "ATIVO",
-    "latency_ms": 24.10
-  }
-}
-```
-
-## ⚙️ Configuração
-
-BeaverSec suporta configuração via arquivo YAML. Crie um arquivo `config.yaml` na raiz do projeto:
-
-```yaml
-# config.yaml
-threads: 10
-timeout: 5.0
-rate_limit: 100
-verbose: false
-```
-
-As opções da CLI sobrescrevem os valores do arquivo de configuração.
-
-## 📝 Licença
-
-MIT © 2024
-
----
-
-<p align="center">Feito com 🦫 por <a href="https://github.com/ojhonatanls">Jhonatan</a></p>
+Contributing
+- Follow PEP8 and include docstrings.
+- Run tests with `pytest`.

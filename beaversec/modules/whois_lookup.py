@@ -2,10 +2,11 @@
 Consulta WHOIS para domínios.
 """
 import logging
+import asyncio
 
 import whois
 
-from beaversec.core.base_module import BaseModule, ModuleResult
+from beaversec.core.base_module import BaseModule
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +17,17 @@ class WhoisLookup(BaseModule):
     name = "whois_lookup"
     description = "Consulta WHOIS de domínios"
 
-    def run(self, target: str, **kwargs) -> ModuleResult:
+    async def run(self, target: str, **kwargs) -> dict:
         self._log_start(target)
-        validated = self.validate_input(target, **kwargs)
-
+        
+        # Rodar whois em um executor para não bloquear o loop
+        loop = asyncio.get_event_loop()
+        
+        def _whois_query():
+            return whois.whois(target)
+        
         try:
-            w = whois.whois(target)
+            w = await loop.run_in_executor(None, _whois_query)
             data = {
                 "domain_name": w.domain_name,
                 "registrar": w.registrar,
@@ -33,16 +39,6 @@ class WhoisLookup(BaseModule):
                 "emails": w.emails,
                 "dnssec": w.dnssec,
             }
-            return ModuleResult(
-                module=self.name,
-                target=target,
-                success=True,
-                data=data,
-            )
+            return data
         except Exception as e:
-            return ModuleResult(
-                module=self.name,
-                target=target,
-                success=False,
-                errors=[str(e)],
-            )
+            return {"error": str(e)}

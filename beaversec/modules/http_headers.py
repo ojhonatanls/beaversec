@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterable, List
 
 from beaversec.core.rate_limiter import TokenBucket
 from beaversec.core.transport import TransportFactory
-from beaversec.core.base import BaseModule
+from beaversec.core.base_module import BaseModule
 from beaversec.config import get_config
 
 logger = logging.getLogger(__name__)

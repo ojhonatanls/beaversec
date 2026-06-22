@@ -16,7 +16,7 @@ class DNSEnum(BaseModule):
     name = "dns_enum"
     description = "Enumeração de registros DNS"
 
-    def run(self, target: str, **kwargs) -> ModuleResult:
+    async def run(self, target: str, **kwargs) -> ModuleResult:
         self._log_start(target)
         validated = self.validate_input(target, **kwargs)
 

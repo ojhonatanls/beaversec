@@ -1,15 +1,7 @@
-[
-  {
-    "module": "port_scanner",
-    "target": "127.0.0.1",
-    "success": true,
-    "data": {
-      "open_ports": [
-        631
-      ],
-      "count": 1
-    },
-    "errors": [],
-    "duration": 0.10168004035949707
+{
+  "127.0.0.1": {
+    "22": "closed|filtered",
+    "80": "closed|filtered",
+    "443": "closed|filtered"
   }
-]
+}

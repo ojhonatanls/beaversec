@@ -11,7 +11,7 @@ import logging
 from typing import Any, Dict, Iterable, List, Optional
 
 from beaversec.core.rate_limiter import TokenBucket
-from beaversec.core.base import BaseModule
+from beaversec.core.base_module import BaseModule
 from beaversec.config import get_config
 from beaversec.modules import service_detection  # local import for optional use
 
