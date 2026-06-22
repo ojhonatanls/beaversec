@@ -1,23 +1,25 @@
-#!/usr/bin/env python3
 """
-BeaverSec - Script de Varredura Automática
-Permite escanear múltiplos alvos de uma vez
-"""
+auto_scan.py
 
+Correções principais:
+- Usa sys.executable para chamar o Python do ambiente atual.
+- Mantém comportamento de exibir saída do main.py ao executar (capture_output=False).
+"""
+#!/usr/bin/env python3
 import subprocess
 import sys
 import time
 
 def scan_target(target, verbose=False):
     """Executa varredura em um alvo"""
-    cmd = ["python3", "main.py", "ping_sweep", target]
+    cmd = [sys.executable, "main.py", "ping_sweep", target]
     if verbose:
         cmd.append("-v")
-    
+
     print(f"\n{'='*50}")
     print(f"🔍 Escaneando: {target}")
     print(f"{'='*50}\n")
-    
+
     try:
         result = subprocess.run(cmd, capture_output=False)
         return result.returncode == 0
@@ -33,17 +35,17 @@ def main():
         "1.1.1.1",           # Cloudflare DNS
         "192.168.1.0/24",    # Rede local
     ]
-    
+
     print("🦫 BeaverSec - Varredura Automática")
     print("="*50)
-    
+
     # Verifica modo verbose
     verbose = "-v" in sys.argv or "--verbose" in sys.argv
-    
+
     for target in targets:
         scan_target(target, verbose)
         time.sleep(1)  # Pequena pausa entre varreduras
-    
+
     print("\n✅ Todas as varreduras concluídas!")
 
 if __name__ == "__main__":
