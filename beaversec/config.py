@@ -49,7 +49,7 @@ def _create_default_config(path: Path) -> Dict[str, Any]:
         "rate_limit": 500.0,
         "timeout": 5.0,
         "shodan": {
-            "api_key": "",  # Will be overridden by env var
+            "api_key": "",
         },
         "nvd": {
             "api_key": "",
@@ -85,7 +85,6 @@ def _load_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
     for env_var, config_key in ENV_VAR_MAPPING.items():
         env_value = os.environ.get(env_var)
         if env_value:
-            # Handle nested keys like "shodan.api_key"
             keys = config_key.split(".")
             current = config
             for key in keys[:-1]:
@@ -108,8 +107,6 @@ def validate_config(config: Dict[str, Any]) -> None:
     Raises:
         ConfigError: If required configuration is missing.
     """
-    # For now, we don't require any specific keys
-    # Modules can check for their specific requirements
     pass
 
 
@@ -130,7 +127,6 @@ def get_config(path: Path | str | None = None) -> Dict[str, Any]:
     """
     p = Path(path) if path else _DEFAULT_PATH
     
-    # If config doesn't exist, create default
     if not p.exists():
         logger.warning(f"Config file {p} not found. Creating default...")
         config = _create_default_config(p)
@@ -144,10 +140,8 @@ def get_config(path: Path | str | None = None) -> Dict[str, Any]:
             logger.exception(f"Failed to load config from {p}: {exc}")
             raise ConfigError(f"Failed to load config: {exc}")
     
-    # Override with environment variables
     config = _load_env_overrides(config)
     
-    # Validate config
     try:
         validate_config(config)
     except ConfigError as e:
@@ -166,7 +160,11 @@ def check_config(path: Path | str | None = None) -> Dict[str, Any]:
     Returns:
         Dictionary with check results.
     """
-    p = Path(path) if path else _DEFAULT_PATH
+    if isinstance(path, dict):
+        p = _DEFAULT_PATH
+    else:
+        p = Path(path) if path else _DEFAULT_PATH
+    
     results = {
         "config_file_exists": p.exists(),
         "config_valid": False,
@@ -175,10 +173,9 @@ def check_config(path: Path | str | None = None) -> Dict[str, Any]:
     }
     
     try:
-        config = get_config(path)
+        config = get_config(p)
         results["config_valid"] = True
         
-        # Check API keys
         for env_var, config_key in ENV_VAR_MAPPING.items():
             keys = config_key.split(".")
             current = config

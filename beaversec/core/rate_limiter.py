@@ -1,58 +1,51 @@
-"""beaversec.core.rate_limiter
-
-Async token-bucket rate limiter used across modules.
 """
-from __future__ import annotations
+Token-bucket rate limiter for async operations.
+"""
 
 import asyncio
 import time
 from typing import Optional
 
 
-class TokenBucket:
-    """Simple async token-bucket rate limiter.
-
-    Attributes:
-        rate: tokens added per second.
-        capacity: maximum tokens in bucket.
-    """
-
-    def __init__(self, rate: float, capacity: Optional[float] = None) -> None:
-        self.rate = float(rate)
-        self.capacity = capacity if capacity is not None else self.rate
-        self._tokens = float(self.capacity)
-        self._last = time.monotonic()
-        self._lock = asyncio.Lock()
-
-    async def acquire(self, tokens: float = 1.0) -> None:
-        """Wait until at least `tokens` are available then consume them.
-
-        Args:
-            tokens: Tokens required (default 1.0).
+class RateLimiter:
+    """Token bucket rate limiter for async operations."""
+    
+    def __init__(self, rate: float, burst: Optional[int] = None, capacity: Optional[int] = None):
         """
-        if tokens <= 0:
-            return
+        Initialize rate limiter.
+        
+        Args:
+            rate: Tokens per second.
+            burst: Maximum burst size (default: rate).
+            capacity: Alias for burst (for compatibility with older modules).
+        """
+        # Se capacity for fornecido, usa ele como burst (compatibilidade)
+        if capacity is not None:
+            burst = capacity
+        self.rate = rate
+        self.burst = burst if burst is not None else int(rate)
+        self.tokens = self.burst
+        self.last_refill = time.monotonic()
+        self._lock = asyncio.Lock()
+    
+    async def acquire(self, tokens: int = 1) -> None:
+        """Acquire tokens from the bucket."""
         async with self._lock:
-            while True:
-                now = time.monotonic()
-                elapsed = now - self._last
-                self._last = now
-                self._tokens = min(self.capacity, self._tokens + elapsed * self.rate)
-                if self._tokens >= tokens:
-                    self._tokens -= tokens
-                    return
-                # compute sleep time until tokens available
-                needed = tokens - self._tokens
-                sleep_time = needed / self.rate if self.rate > 0 else 0.1
-                await asyncio.sleep(sleep_time)
-
-    def try_acquire_now(self, tokens: float = 1.0) -> bool:
-        """Attempt a non-blocking acquire. Returns True if success."""
+            self._refill()
+            if self.tokens < tokens:
+                wait_time = (tokens - self.tokens) / self.rate
+                await asyncio.sleep(wait_time)
+                self._refill()
+            self.tokens -= tokens
+    
+    def _refill(self) -> None:
+        """Refill tokens based on elapsed time."""
         now = time.monotonic()
-        elapsed = now - self._last
-        self._last = now
-        self._tokens = min(self.capacity, self._tokens + elapsed * self.rate)
-        if self._tokens >= tokens:
-            self._tokens -= tokens
-            return True
-        return False
+        elapsed = now - self.last_refill
+        new_tokens = elapsed * self.rate
+        self.tokens = min(self.burst, self.tokens + new_tokens)
+        self.last_refill = now
+
+
+# Alias para compatibilidade com módulos antigos
+TokenBucket = RateLimiter
