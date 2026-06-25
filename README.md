@@ -48,25 +48,26 @@ BeaverSec é um framework de segurança ofensiva modular projetado para reconhec
 ```bash
 ./scripts/install.sh
 
-Windows:
+# Windows:
 powershell
 
 .\scripts\install.ps1
 
-Com ferramentas de desenvolvimento:
+## Com ferramentas de desenvolvimento:
 bash
 
 ./scripts/install.sh --dev
 
-2. Configuração
+# 2. Configuração
 
-Copie o arquivo de configuração de exemplo:
-bash
+### Copie o arquivo de configuração de exemplo:
+bash 
 
 cp beaversec/config/templates/config.yaml.template ~/.beaversec/config.yaml
 
-Edite ~/.beaversec/config.yaml para adicionar chaves de API e configurações de proxy.
-3. Uso Básico
+### Edite ~/.beaversec/config.yaml para adicionar chaves de API e configurações de proxy.
+
+# 3. Uso Básico
 
 Listar módulos disponíveis:
 bash
@@ -78,14 +79,14 @@ bash
 
 beaversec run <module_name> <target>
 
-Exemplos:
+### Exemplos:
 bash
 
 beaversec run port_scanner 192.168.1.1 -p 22,80,443
 beaversec run subdomain_brute example.com
 beaversec run dns_enum example.com
 
-Exportadores de Resultados
+### Exportadores de Resultados
 JSON
 bash
 
@@ -101,7 +102,7 @@ bash
 
 beaversec run port_scanner 127.0.0.1 -p 22,80,443 -o resultado.csv --format csv
 
-Configuração
+### Configuração
 
 BeaverSec suporta configuração via arquivo YAML. Crie um arquivo config.yaml em ~/.beaversec/:
 yaml
@@ -123,84 +124,74 @@ proxy:
   tor_proxy: "socks5://127.0.0.1:9050"
 
 # Security Settings
-security:
+#### security:
   allow_private_networks: false
   max_targets: 1000
   allow_loopback: false
 
-# API Keys (configure via environment variables for security)
-# SHODAN_API_KEY: ""
-# NVD_API_KEY: ""
-# SECURITYTRAILS_API_KEY: ""
+#### API Keys (configure via environment variables for security)
+#### SHODAN_API_KEY: ""
+#### NVD_API_KEY: ""
+#### SECURITYTRAILS_API_KEY: ""
 
-Nota: As opções da CLI sobrescrevem os valores do arquivo de configuração. Para maior segurança, configure as chaves de API como variáveis de ambiente:
+#### Nota: As opções da CLI sobrescrevem os valores do arquivo de configuração. Para maior segurança, configure as chaves de API como variáveis de ambiente:
 bash
 
 export SHODAN_API_KEY="sua_chave_aqui"
 export NVD_API_KEY="sua_chave_aqui"
 export SECURITYTRAILS_API_KEY="sua_chave_aqui"
 
-Novos Recursos na v4.0
-🔒 Segurança Aprimorada
+# Novos Recursos na v4.0
+#### Segurança Aprimorada
 
-    Sanitização rigorosa de todas as entradas
+####    Sanitização rigorosa de todas as entradas
 
-    Logger auditável com rastreabilidade completa
+####    Logger auditável com rastreabilidade completa
 
-    Gerenciamento seguro de credenciais com criptografia
+####    Gerenciamento seguro de credenciais com criptografia
 
-    Validação de alvos com bloqueio de redes privadas
+####    Validação de alvos com bloqueio de redes privadas
 
-    Eliminação total de eval(), exec() e subprocessos inseguros
+####    Eliminação total de eval(), exec() e subprocessos inseguros
 
-⚡ Performance e Robustez
+# Performance e Robustez
 
-    Connection pooling para scanners de rede
+ ####   Connection pooling para scanners de rede
 
-    Cache LRU para consultas DNS
+####    Cache LRU para consultas DNS
 
-    Rate limiting adaptativo por módulo
+####    Rate limiting adaptativo por módulo
 
-    Timeouts configuráveis com retry exponencial
+####    Timeouts configuráveis com retry exponencial
 
-    Processamento paralelo com controle de workers
+####    Processamento paralelo com controle de workers
 
-🛠️ Arquitetura
+# Arquitetura
 
-    Sistema de módulos com descoberta automática
+####    Sistema de módulos com descoberta automática
 
-    Hierarquia de exceções personalizada
+####    Hierarquia de exceções personalizada
 
-    Estrutura de validação centralizada
+####    Estrutura de validação centralizada
 
-    Reporters para múltiplos formatos (JSON, HTML, CSV)
+####    Reporters para múltiplos formatos (JSON, HTML, CSV)
 
-    Suporte nativo multiplataforma
+####    Suporte nativo multiplataforma
 
-📊 Logging e Auditoria
+# Logging e Auditoria
 
-    Logs estruturados em JSON para integração com SIEM
+ ####   Logs estruturados em JSON para integração com SIEM
 
-    Rotação automática de logs
+####    Rotação automática de logs
 
-    Níveis de log configuráveis
+####    Níveis de log configuráveis
 
-    Auditoria completa de todas as operações
+####    Auditoria completa de todas as operações
 
-Notas do Desenvolvedor
-Estrutura do Projeto
-text
 
-beaversec/
-├── cli/          # Interface de linha de comando
-├── core/         # Núcleo do framework (segurança, validação, base)
-├── modules/      # Módulos de scanner (16 módulos)
-├── utils/        # Utilitários (logging, credenciais, rede, rate limiter)
-└── config/       # Configuração e templates
+# Desenvolvimento
 
-Desenvolvimento
-
-Adicionar um novo módulo:
+### Adicionar um novo módulo:
 
     Crie um arquivo em beaversec/modules/
 
@@ -210,22 +201,22 @@ Adicionar um novo módulo:
 
     O módulo será descoberto automaticamente
 
-Testes:
+### Testes:
 bash
 
-# Executar todos os testes
+### Executar todos os testes
 pytest
 
-# Com cobertura
+### Com cobertura
 pytest --cov=beaversec
 
-# Apenas testes unitários
+### Apenas testes unitários
 pytest -m unit
 
-# Apenas testes de segurança
+### Apenas testes de segurança
 pytest -m security
 
-Padrões de Código:
+## Padrões de Código:
 
     Siga PEP8
 
@@ -235,17 +226,17 @@ Padrões de Código:
 
     Mantenha 100% de cobertura de testes para módulos centrais
 
-Licença
+## Licença
 
 MIT © 2024 Jhonatan L. Santos
 Contribuindo
 
-    Fork o projeto
+ ###   Fork o projeto
 
-    Crie uma branch para sua feature (git checkout -b feature/AmazingFeature)
+####    Crie uma branch para sua feature (git checkout -b feature/AmazingFeature)
 
-    Commit suas mudanças (git commit -m 'Add some AmazingFeature')
+####    Commit suas mudanças (git commit -m 'Add some AmazingFeature')
 
-    Push para a branch (git push origin feature/AmazingFeature)
+####    Push para a branch (git push origin feature/AmazingFeature)
 
-    Abra um Pull Request
+####    Abra um Pull Request
