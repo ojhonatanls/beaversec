@@ -1,0 +1,31 @@
+# BeaverSec Configuration Template
+# Copy this file to config.yaml in the project root
+
+# Performance Settings
+threads: 10
+timeout: 5.0
+rate_limit: 100
+verbose: false
+
+# Logging
+log_level: INFO
+max_results: 10000
+
+# Proxy Configuration
+proxy:
+  url: ""
+  username: ""
+  password: ""
+  use_tor: false
+  tor_proxy: "socks5://127.0.0.1:9050"
+
+# API Keys (set via environment variables for security)
+# SHODAN_API_KEY=
+# NVD_API_KEY=
+# SECURITYTRAILS_API_KEY=
+
+# Security Settings
+security:
+  allow_private_networks: false
+  max_targets: 1000
+  allow_loopback: false

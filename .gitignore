@@ -1,0 +1,31 @@
+# BeaverSec - repository ignore rules
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# BeaverSec specific
+data/
+logs/
+resultado.*
+*.log
+config.yaml
+!example-config.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+config.yaml
